@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="header animate-fade-in">
+    <div class="header-title">
+        <h1>Platform Settings</h1>
+        <p>Configure your dashboard preferences and account settings.</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('settings') }}" style="text-decoration: none;">
+            <div id="header-avatar" class="client-avatar" style="border-radius: 50%;">JD</div>
+        </a>
+    </div>
+</header>
+
+<div style="display: grid; grid-template-columns: 250px 1fr; gap: 24px; margin-top: 20px;" class="animate-fade-in delay-100">
+    <!-- Settings Sidebar -->
+    <div class="glass-panel" style="padding: 20px; height: fit-content;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            {% for tab in ['Profile Details', 'Notifications', 'Security', 'Integrations'] %}
+            <a href="{{ url_for('settings', tab=tab) }}" style="text-decoration: none;">
+                <div style="padding: 12px; border-radius: 8px; background: {{ 'var(--primary)' if active_tab == tab else 'transparent' }}; color: {{ 'white' if active_tab == tab else 'var(--text-main)' }}; display: flex; align-items: center; gap: 12px; cursor: pointer; font-weight: {{ '500' if active_tab == tab else 'normal' }}; transition: all 0.2s ease;" onmouseover="if('{{ active_tab }}' != '{{ tab }}') this.style.background='rgba(255,255,255,0.05)'" onmouseout="if('{{ active_tab }}' != '{{ tab }}') this.style.background='transparent'">
+                    {% if tab == 'Profile Details' %}
+                        <i data-lucide="user" style="width: 18px; height: 18px;"></i>
+                    {% elif tab == 'Notifications' %}
+                        <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+                    {% elif tab == 'Security' %}
+                        <i data-lucide="shield" style="width: 18px; height: 18px;"></i>
+                    {% elif tab == 'Integrations' %}
+                        <i data-lucide="database" style="width: 18px; height: 18px;"></i>
+                    {% endif %}
+                    {{ tab }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Settings Content -->
+    <div class="glass-panel" style="padding: 32px;">
+        <div class="animate-fade-in">
+            <h2 style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                {% if active_tab == 'Profile Details' %}
+                    <i data-lucide="user" style="width: 24px; height: 24px; color: var(--primary);"></i> Profile Configuration
+                {% elif active_tab == 'Notifications' %}
+                    <i data-lucide="bell" style="width: 24px; height: 24px; color: var(--primary);"></i> Notification Preferences
+                {% elif active_tab == 'Security' %}
+                    <i data-lucide="shield" style="width: 24px; height: 24px; color: var(--primary);"></i> Security Settings
+                {% elif active_tab == 'Integrations' %}
+                    <i data-lucide="database" style="width: 24px; height: 24px; color: var(--primary);"></i> Connected Integrations
+                {% endif %}
+            </h2>
+
+            {% if active_tab == 'Profile Details' %}
+            <div style="display: flex; flex-direction: column; gap: 32px;">
+                <!-- Avatar Section -->
+                <div style="display: flex; align-items: center; gap: 24px;">
+                    <div id="profile-avatar" class="client-avatar" style="width: 80px; height: 80px; font-size: 32px; background-size: cover; background-position: center;">JD</div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <input type="file" id="photo-input" style="display: none;" accept="image/*" onchange="handlePhotoUpload(event)">
+                        <button onclick="document.getElementById('photo-input').click()" style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); color: white; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                            Change Photo
+                        </button>
+                        <button onclick="removePhoto()" style="padding: 8px 16px; background: transparent; border: none; color: var(--danger); cursor: pointer; text-align: left; font-size: 14px;">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Form Section -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px;">First Name</label>
+                            <input type="text" id="first-name" value="Jane" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: white; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px;">Last Name</label>
+                            <input type="text" id="last-name" value="Doe" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: white; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px;">Email Address</label>
+                            <input type="email" id="email-address" value="jane.doe@healthsales.com" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: white; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: flex-end;">
+                        <button id="save-profile-btn" onclick="saveProfile()" style="width: 100%; height: 100%; max-height: 200px; background: var(--primary); border: none; color: white; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 18px; box-shadow: 0 4px 20px var(--primary-glow); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
+                            <i data-lucide="save" style="width: 32px; height: 32px;"></i>
+                            <span id="save-btn-text">Save Profile Changes</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                function handlePhotoUpload(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const avatar = document.getElementById('profile-avatar');
+                            const headerAvatar = document.getElementById('header-avatar');
+                            avatar.style.backgroundImage = `url(${e.target.result})`;
+                            avatar.innerText = '';
+                            if (headerAvatar) {
+                                headerAvatar.style.backgroundImage = `url(${e.target.result})`;
+                                headerAvatar.innerText = '';
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+
+                function removePhoto() {
+                    const avatar = document.getElementById('profile-avatar');
+                    const headerAvatar = document.getElementById('header-avatar');
+                    avatar.style.backgroundImage = 'none';
+                    avatar.innerText = 'JD';
+                    if (headerAvatar) {
+                        headerAvatar.style.backgroundImage = 'none';
+                        headerAvatar.innerText = 'JD';
+                    }
+                }
+
+                function saveProfile() {
+                    const btn = document.getElementById('save-profile-btn');
+                    const text = document.getElementById('save-btn-text');
+                    const originalText = text.innerText;
+                    
+                    btn.style.opacity = '0.7';
+                    btn.style.pointerEvents = 'none';
+                    text.innerText = 'Saving...';
+                    
+                    setTimeout(() => {
+                        btn.style.opacity = '1';
+                        btn.style.pointerEvents = 'auto';
+                        btn.style.background = 'var(--success)';
+                        text.innerText = 'Saved successfully!';
+                        
+                        setTimeout(() => {
+                            btn.style.background = 'var(--primary)';
+                            text.innerText = originalText;
+                        }, 2000);
+                    }, 1000);
+                }
+            </script>
+            
+            {% elif active_tab == 'Notifications' %}
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                    <div>
+                        <h4 style="margin: 0 0 4px 0;">New Orders</h4>
+                        <p style="margin: 0; fontSize: 14px; color: var(--text-muted);">Get notified when a new order is placed.</p>
+                    </div>
+                    <input type="checkbox" checked style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                    <div>
+                        <h4 style="margin: 0 0 4px 0;">Order Deliveries</h4>
+                        <p style="margin: 0; fontSize: 14px; color: var(--text-muted);">Alerts when an order status changes to delivered.</p>
+                    </div>
+                    <input type="checkbox" checked style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                    <div>
+                        <h4 style="margin: 0 0 4px 0;">Weekly Reports</h4>
+                        <p style="margin: 0; fontSize: 14px; color: var(--text-muted);">Receive a weekly summary of sales performance.</p>
+                    </div>
+                    <input type="checkbox" style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
+            </div>
+            <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+                <button onclick="saveMessage(this)" style="padding: 12px 24px; background: var(--primary); border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">Save Preferences</button>
+            </div>
+
+            {% elif active_tab == 'Security' %}
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div>
+                    <h3 style="font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;"><i data-lucide="key" style="width: 18px; height: 18px;"></i> Change Password</h3>
+                    <div style="display: grid; gap: 16px;">
+                        <input type="password" placeholder="Current Password" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: white; outline: none;">
+                        <input type="password" placeholder="New Password" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: white; outline: none;">
+                        <input type="password" placeholder="Confirm New Password" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: white; outline: none;">
+                        <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">
+                            <button onclick="saveMessage(this, 'Updating...', 'Password updated!')" style="padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); color: white; border-radius: 8px; cursor: pointer; font-weight: 500;">Update Password</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="border-top: 1px solid var(--border); padding-top: 24px;">
+                    <h3 style="font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;"><i data-lucide="lock" style="width: 18px; height: 18px;"></i> Two-Factor Authentication (2FA)</h3>
+                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">Add an extra layer of security to your account by enabling two-factor authentication.</p>
+                    <button id="tfa-btn" onclick="toggleTFA()" style="padding: 10px 20px; background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s ease;">Enable 2FA</button>
+                </div>
+            </div>
+
+            {% elif active_tab == 'Integrations' %}
+            <div style="display: grid; gap: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 40px; height: 40px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0 0 4px 0;">Google Workspace</h4>
+                            <p id="google-status" style="margin: 0; fontSize: 14px; color: var(--text-muted);">Connected for single sign-on and email sync.</p>
+                        </div>
+                    </div>
+                    <button id="google-btn" onclick="toggleIntegration('google')" style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 6px; cursor: pointer;">Disconnect</button>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 40px; height: 40px; background: #0061FF; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12.0004 6.6L18.4004 10.2L12.0004 13.8L5.6004 10.2L12.0004 6.6ZM12.0004 0L0 6.6L12.0004 13.2L24 6.6L12.0004 0ZM12.0004 19.8L5.6004 16.2L0 19.3333L12.0004 26L24 19.3333L18.4004 16.2L12.0004 19.8ZM12.0004 13.2L5.6004 9.6L0 12.7333L12.0004 19.4L24 12.7333L18.4004 9.6L12.0004 13.2Z" fill="white"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0 0 4px 0;">Dropbox</h4>
+                            <p id="dropbox-status" style="margin: 0; fontSize: 14px; color: var(--text-muted);">Not connected.</p>
+                        </div>
+                    </div>
+                    <button id="dropbox-btn" onclick="toggleIntegration('dropbox')" style="padding: 8px 16px; background: transparent; border: 1px solid var(--border); color: var(--text-main); border-radius: 6px; cursor: pointer;">Connect</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 16px; padding: 24px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 44px; height: 44px; background: #f2c811; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Power_bi_logo_black.svg" style="width: 24px;" alt="PBI">
+                            </div>
+                            <div>
+                                <h4 style="margin: 0 0 4px 0;">Microsoft Power BI Embedded</h4>
+                                <p style="margin: 0; fontSize: 14px; color: var(--text-dim);">Display your own healthcare analytics dashboards here.</p>
+                            </div>
+                        </div>
+                        <span style="font-size: 0.7rem; background: rgba(59, 130, 246, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(59, 130, 246, 0.2);">ACTIVE</span>
+                    </div>
+                    
+                    <div style="margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px;">
+                        <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 13px;">Power BI Public Embed URL</label>
+                        <div style="display: flex; gap: 12px;">
+                            <input type="text" id="pbi-url-input" placeholder="https://app.powerbi.com/view?r=..." 
+                                   style="flex: 1; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; outline: none; font-size: 14px;">
+                            <button onclick="savePBISettings(this)" style="padding: 0 24px; background: var(--primary); border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                                Save URL
+                            </button>
+                        </div>
+                        <p style="margin-top: 12px; font-size: 12px; color: var(--text-dim); line-height: 1.5;">
+                            <strong>How to get this:</strong> 1. Open your report in Power BI Service <br> 
+                            2. Go to <strong>File</strong> > <strong>Embed report</strong> > <strong>Website or portal</strong> <br>
+                            3. Copy the URL from the first box and paste it here.
+                        </p>
+                    </div>
+                </div>
+
+                <script>
+                    function savePBISettings(btn) {
+                        const url = document.getElementById('pbi-url-input').value;
+                        if (!url.startsWith('https://')) {
+                            alert('Please enter a valid HTTPS URL from Power BI.');
+                            return;
+                        }
+                        
+                        localStorage.setItem('custom_pbi_url', url);
+                        saveMessage(btn, 'Connecting...', 'Linked Successfully!');
+                        
+                        setTimeout(() => {
+                            window.location.href = "{{ url_for('power_bi') }}";
+                        }, 1500);
+                    }
+                    
+                    // Load existing URL if any
+                    window.addEventListener('DOMContentLoaded', () => {
+                        const savedUrl = localStorage.getItem('custom_pbi_url');
+                        if (savedUrl) {
+                            const input = document.getElementById('pbi-url-input');
+                            if (input) input.value = savedUrl;
+                        }
+                    });
+                </script>
+            </div>
+            {% endif %}
+            
+            <script>
+                function saveMessage(btn, loadingText = 'Saving...', successText = 'Saved successfully!') {
+                    const originalText = btn.innerText;
+                    btn.innerText = loadingText;
+                    btn.style.opacity = '0.7';
+                    btn.style.pointerEvents = 'none';
+                    
+                    setTimeout(() => {
+                        btn.innerText = successText;
+                        btn.style.opacity = '1';
+                        btn.style.pointerEvents = 'auto';
+                        btn.style.background = 'var(--success)';
+                        btn.style.color = 'white';
+                        btn.style.border = 'none';
+                        
+                        setTimeout(() => {
+                            btn.innerText = originalText;
+                            btn.style.background = '';
+                            btn.style.color = '';
+                            btn.style.border = '';
+                        }, 2000);
+                    }, 800);
+                }
+
+                function toggleTFA() {
+                    const btn = document.getElementById('tfa-btn');
+                    if (btn.innerText === 'Enable 2FA') {
+                        btn.innerText = 'Disable 2FA';
+                        btn.style.background = 'var(--success)';
+                        btn.style.color = 'white';
+                        btn.style.border = 'none';
+                    } else {
+                        btn.innerText = 'Enable 2FA';
+                        btn.style.background = 'transparent';
+                        btn.style.color = 'var(--primary)';
+                        btn.style.border = '1px solid var(--primary)';
+                    }
+                }
+
+                function toggleIntegration(type) {
+                    const btn = document.getElementById(`${type}-btn`);
+                    const status = document.getElementById(`${type}-status`);
+                    
+                    if (btn.innerText === 'Connect') {
+                        btn.innerText = 'Connecting...';
+                        setTimeout(() => {
+                            btn.innerText = 'Disconnect';
+                            btn.style.background = 'rgba(255,255,255,0.1)';
+                            btn.style.border = 'none';
+                            status.innerText = type === 'google' ? 'Connected for single sign-on and email sync.' : 'Connected for file syncing.';
+                        }, 1000);
+                    } else {
+                        btn.innerText = 'Connect';
+                        btn.style.background = 'transparent';
+                        btn.style.border = '1px solid var(--border)';
+                        status.innerText = 'Not connected.';
+                    }
+                }
+            </script>
+        </div>
+    </div>
+</div>
+{% endblock %}

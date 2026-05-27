@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="header animate-fade-in">
+    <div class="header-title">
+        <h1>Sales Performance</h1>
+        <p>Comprehensive analysis of sales trends, KPIs, and profitability.</p>
+    </div>
+</header>
+
+<!-- Sales KPIs -->
+<div class="stats-grid">
+    {% for kpi in data.kpis %}
+    {% set target_url = '#' %}
+    {% if 'Sales' in kpi.title %}
+        {% set target_url = url_for('product_analysis') %}
+    {% elif 'Profit' in kpi.title %}
+        {% set target_url = url_for('profit_analysis') %}
+    {% elif 'Value' in kpi.title %}
+        {% set target_url = url_for('hospital_analysis') %}
+    {% elif 'Rate' in kpi.title %}
+        {% set target_url = url_for('reports_insights') %}
+    {% endif %}
+    
+    <a href="{{ target_url }}" style="text-decoration: none; color: inherit; display: block;" title="Click to view detailed {{ kpi.title }} analysis">
+        <div class="glass-panel stat-card animate-scale-in" 
+             style="animation-delay: {{ loop.index0 * 100 }}ms; cursor: pointer; transition: transform 0.2s, background 0.2s;">
+            <div class="stat-info">
+                <span class="stat-label">{{ kpi.title }}</span>
+                <h3 class="stat-value">{{ kpi.value }}</h3>
+                <span class="stat-trend {{ 'trend-up' if kpi.isPositive else 'trend-down' }}">
+                    <i data-lucide="{{ 'trending-up' if kpi.isPositive else 'trending-down' }}"></i>
+                    {{ kpi.trend }}
+                </span>
+            </div>
+            <div class="stat-icon-wrapper">
+                <i data-lucide="{{ 'dollar-sign' if 'Sales' in kpi.title or 'Profit' in kpi.title else 'activity' }}"></i>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<div class="performance-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px;">
+    <!-- Monthly Trend Chart -->
+    <div class="glass-panel section-card animate-fade-in delay-200">
+        <div class="card-header">
+            <h3>Monthly Revenue Trend</h3>
+            <div class="chart-legend">
+                <span class="legend-item"><span class="dot sales"></span> Sales</span>
+                <span class="legend-item"><span class="dot profit"></span> Profit</span>
+            </div>
+        </div>
+        <div class="chart-container" 
+             style="height: 300px; display: flex; align-items: flex-end; justify-content: space-around; padding-top: 40px; position: relative;"
+             onclick="handleAction('Monthly Revenue Trend', 'Analyzing selected data points...')">
+            <div class="chart-y-axis">
+                <span>150k</span>
+                <span>100k</span>
+                <span>50k</span>
+                <span>0</span>
+            </div>
+            {% for item in data.monthly_trend %}
+            <div class="chart-column">
+                <div class="bar-group">
+                    <div class="bar sales-bar" style="height: {{ (item.sales / 150000) * 100 }}%;">
+                        <span class="tooltip">${{ "{:,.0f}".format(item.sales) }}</span>
+                    </div>
+                    <div class="bar profit-bar" style="height: {{ (item.profit / 150000) * 100 }}%;">
+                        <span class="tooltip">${{ "{:,.0f}".format(item.profit) }}</span>
+                    </div>
+                </div>
+                <span class="month-label">{{ item.month }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Sales vs Profit by Category -->
+    <div class="glass-panel section-card animate-fade-in delay-300">
+        <div class="card-header">
+            <h3>Sales vs Profit</h3>
+            <p style="font-size: 0.85rem; color: var(--text-dim);">By Equipment Category</p>
+        </div>
+        <div class="category-stats" style="margin-top: 20px;">
+            {% for cat in data.sales_vs_profit %}
+            <div class="category-item" style="margin-bottom: 20px; cursor: pointer;" onclick="handleAction('{{ cat.name }}', 'Viewing performance breakdown for {{ cat.name }}...')">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-weight: 500;">{{ cat.name }}</span>
+                    <span style="font-size: 0.9rem; color: var(--text-dim);">${{ "{:,.0f}".format(cat.sales) }}</span>
+                </div>
+                <div class="progress-bar-container" style="height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; position: relative;">
+                    <div class="progress-fill sales" style="width: {{ (cat.sales / 500000) * 100 }}%; height: 100%; background: var(--primary); border-radius: 4px; transition: width 1s ease;"></div>
+                    <div class="progress-fill profit" style="width: {{ (cat.profit / 500000) * 100 }}%; height: 100%; background: var(--success); border-radius: 4px; position: absolute; top: 0; left: 0; opacity: 0.7; transition: width 1s ease 0.2s;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Notification Overlay -->
+<div id="toast" style="position: fixed; bottom: 24px; right: 24px; background: rgba(25, 30, 45, 0.9); backdrop-filter: blur(10px); border: 1px solid var(--primary); padding: 16px 24px; border-radius: 12px; color: white; display: none; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-left: 4px solid var(--primary); transform: translateY(100px); transition: transform 0.3s ease-out;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i data-lucide="loader-2" class="spin" style="width: 18px; color: var(--primary);"></i>
+        <div>
+            <strong id="toast-title" style="display: block; font-size: 0.9rem;">Processing</strong>
+            <span id="toast-msg" style="font-size: 0.8rem; color: var(--text-dim);">Action initiated...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleAction(title, message) {
+        const toast = document.getElementById('toast');
+        const tTitle = document.getElementById('toast-title');
+        const tMsg = document.getElementById('toast-msg');
+        
+        tTitle.innerText = title;
+        tMsg.innerText = message;
+        
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100px)';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 300);
+        }, 3000);
+    }
+</script>
+
+<style>
+    .performance-grid { margin-bottom: 40px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .chart-legend { display: flex; gap: 16px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.sales { background: var(--primary); }
+    .dot.profit { background: var(--success); }
+    .chart-y-axis { position: absolute; left: 0; top: 40px; bottom: 40px; display: flex; flex-direction: column; justify-content: space-between; color: var(--text-dim); font-size: 0.75rem; padding-right: 10px; border-right: 1px solid var(--border); }
+    .chart-column { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; gap: 12px; }
+    .bar-group { display: flex; align-items: flex-end; gap: 4px; height: 100%; width: 40px; }
+    .bar { flex: 1; border-radius: 4px 4px 0 0; position: relative; cursor: pointer; transition: all 0.3s ease; }
+    .sales-bar { background: linear-gradient(to top, var(--primary), #60a5fa); }
+    .profit-bar { background: linear-gradient(to top, var(--success), #4ade80); }
+    .bar:hover { filter: brightness(1.2); transform: scaleX(1.1); }
+    .tooltip { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; opacity: 0; pointer-events: none; transition: opacity 0.2s; white-space: nowrap; z-index: 10; }
+    .bar:hover .tooltip { opacity: 1; }
+    .month-label { font-size: 0.8rem; color: var(--text-dim); }
+    .glass-button { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; padding: 10px 20px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .glass-button:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+    .stat-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.05); }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+{% endblock %}

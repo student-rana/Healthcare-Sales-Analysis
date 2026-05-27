@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare Sales Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/App.css') }}">
+    <!-- Include Lucide icons via CDN script -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo-container">
+                <i data-lucide="activity"></i>
+                <h2>HealthSales</h2>
+            </div>
+            
+            <ul class="nav-links">
+                <li>
+                    <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if request.endpoint == 'dashboard' else '' }}">
+                        <i data-lucide="layout-dashboard"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('hospital_analysis') }}" class="nav-item {{ 'active' if request.endpoint == 'hospital_analysis' else '' }}">
+                        <i data-lucide="building"></i> Hospital Analysis
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('sales_performance') }}" class="nav-item {{ 'active' if request.endpoint == 'sales_performance' else '' }}">
+                        <i data-lucide="line-chart"></i> Sales Performance
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('region_analysis') }}" class="nav-item {{ 'active' if request.endpoint == 'region_analysis' else '' }}">
+                        <i data-lucide="globe"></i> Region Analysis
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('product_analysis') }}" class="nav-item {{ 'active' if request.endpoint == 'product_analysis' else '' }}">
+                        <i data-lucide="package"></i> Product Analysis
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('operational_analysis') }}" class="nav-item {{ 'active' if request.endpoint == 'operational_analysis' else '' }}">
+                        <i data-lucide="users-round"></i> Patient Analysis
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('profit_analysis') }}" class="nav-item {{ 'active' if request.endpoint == 'profit_analysis' else '' }}">
+                        <i data-lucide="trending-up"></i> Profit Analysis
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('team') }}" class="nav-item {{ 'active' if request.endpoint == 'team' else '' }}">
+                        <i data-lucide="users"></i> Team
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('power_bi') }}" class="nav-item {{ 'active' if request.endpoint == 'power_bi' else '' }}">
+                        <i data-lucide="bar-chart-3"></i> Power BI
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('reports_insights') }}" class="nav-item {{ 'active' if request.endpoint == 'reports_insights' else '' }}">
+                        <i data-lucide="file-text"></i> Reports / Insights
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('settings') }}" class="nav-item {{ 'active' if request.endpoint == 'settings' else '' }}">
+                        <i data-lucide="settings"></i> Settings
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="handleLogout(this)">
+                    <i data-lucide="log-out"></i> <span id="logout-text">Logout</span>
+                </button>
+            </div>
+            
+            <script>
+                function handleLogout(btn) {
+                    const text = document.getElementById('logout-text');
+                    btn.style.opacity = '0.7';
+                    btn.style.pointerEvents = 'none';
+                    text.innerText = 'Logging out...';
+                    
+                    setTimeout(() => {
+                        alert('You have been logged out (Simulation)');
+                        location.reload();
+                    }, 1000);
+                }
+            </script>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Initialize Lucide icons -->
+    <script>
+      lucide.createIcons();
+    </script>
+</body>
+</html>

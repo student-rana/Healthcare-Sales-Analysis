@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="header animate-fade-in">
+    <div class="header-title">
+        <h1>Region Analysis</h1>
+        <p>Punjab district distribution and profitability metrics.</p>
+    </div>
+    <div class="header-actions">
+        <button class="glass-button" onclick="showPunjabMap()">
+            <i data-lucide="map"></i> View Map
+        </button>
+    </div>
+</header>
+
+<!-- Region KPIs -->
+<div class="stats-grid">
+    {% for kpi in data.kpis %}
+    {% set target_url = '#' %}
+    {% if 'Top' in kpi.title %}
+        {% set target_url = url_for('hospital_analysis') %}
+    {% elif 'Growth' in kpi.title %}
+        {% set target_url = url_for('reports_insights') %}
+    {% elif 'Margin' in kpi.title %}
+        {% set target_url = url_for('profit_analysis') %}
+    {% endif %}
+    
+    <a href="{{ target_url }}" style="text-decoration: none; color: inherit; display: block;" title="Click to view detailed {{ kpi.title }} analysis">
+        <div class="glass-panel stat-card animate-scale-in" 
+             style="animation-delay: {{ loop.index0 * 100 }}ms; cursor: pointer; transition: transform 0.2s, background 0.2s;">
+            <div class="stat-info">
+                <span class="stat-label">{{ kpi.title }}</span>
+                <h3 class="stat-value" style="font-size: 1.5rem; margin: 8px 0;">{{ kpi.value }}</h3>
+                <p style="font-size: 0.85rem; color: var(--text-dim);">{{ kpi.detail }}</p>
+            </div>
+            <div class="stat-icon-wrapper">
+                <i data-lucide="{{ 'award' if 'Top' in kpi.title else 'trending-up' if 'Growth' in kpi.title else 'pie-chart' }}"></i>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<div id="punjab-map-panel" class="glass-panel section-card animate-fade-in" style="display: none; margin-top: 24px; border-color: rgba(59, 130, 246, 0.35);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px;">
+        <div>
+            <h3 style="margin-bottom: 8px;"><i data-lucide="map" style="width: 18px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></i>Punjab District Map</h3>
+            <p style="color: var(--text-dim); margin: 0;">District view for Ludhiana, Mohali, Amritsar, Faridkot, and Jalandhar performance zones.</p>
+        </div>
+        <button class="glass-button panel-close" onclick="document.getElementById('punjab-map-panel').style.display='none'" aria-label="Close map">
+            <i data-lucide="x"></i>
+        </button>
+    </div>
+    <div class="map-grid">
+        {% for region in data.regions %}
+        <div class="map-district" onclick="handleAction('District: {{ region.name }}', 'Opening district performance details...')">
+            <i data-lucide="map-pin"></i>
+            <strong>{{ region.name }}</strong>
+            <span>{{ region.growth }} growth</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="performance-grid" style="display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 24px;">
+    <!-- Region Performance Table -->
+    <div class="glass-panel section-card animate-fade-in delay-200">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3>Regional Performance Breakdown</h3>
+            <div class="header-filters" style="background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                <span style="font-size: 0.85rem; color: var(--text-dim);">Sort by: <strong style="color: var(--primary);">Sales</strong></span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>District Name</th>
+                        <th>Sales Distribution</th>
+                        <th>Gross Sales</th>
+                        <th>Net Profit</th>
+                        <th>Profit Margin</th>
+                        <th>Growth</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for region in data.regions %}
+                    <tr class="animate-fade-in" 
+                        style="animation-delay: {{ 300 + loop.index0 * 100 }}ms; cursor: pointer;"
+                        onclick="handleAction('Region: {{ region.name }}', 'Opening regional audit for {{ region.name }}...')">
+                        <td style="font-weight: 600;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i data-lucide="map-pin" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                                {{ region.name }}
+                            </div>
+                        </td>
+                        <td style="width: 250px;">
+                            <div class="progress-bar-container" style="height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; width: 100%;">
+                                <div class="progress-fill sales" style="width: {{ (region.sales / 550000) * 100 }}%; height: 100%; background: var(--primary); border-radius: 4px; box-shadow: 0 0 10px var(--primary-glow);"></div>
+                            </div>
+                        </td>
+                        <td>${{ "{:,.0f}".format(region.sales) }}</td>
+                        <td style="color: var(--success); font-weight: 500;">${{ "{:,.0f}".format(region.profit) }}</td>
+                        <td>{{ "{:.1f}%".format((region.profit / region.sales) * 100) }}</td>
+                        <td>
+                            <span class="status-badge {{ 'status-delivered' if '+' in region.growth else 'status-pending' }}" style="padding: 4px 10px; font-size: 0.75rem;">
+                                {{ region.growth }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="region-insights-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+    <!-- Profitability Insight -->
+    <div class="glass-panel section-card animate-fade-in delay-400">
+        <h3><i data-lucide="target" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px; color: var(--success);"></i> Profitability Insight</h3>
+        <p style="color: var(--text-dim); line-height: 1.6; font-size: 0.95rem;">
+            Ludhiana leads in absolute profit, contributing <strong>$208,000</strong>. Mohali shows the strongest growth at <strong>15.8%</strong>, supported by super-specialty and multi-specialty hospital demand.
+        </p>
+        <div style="margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 12px;">
+            <p style="font-size: 0.85rem; color: var(--success);"><strong>Recommendation:</strong> Increase account coverage in Mohali and Ludhiana to capitalize on high-margin hospital demand.</p>
+        </div>
+    </div>
+
+    <!-- Data Summary -->
+    <div class="glass-panel section-card animate-fade-in delay-400">
+        <h3><i data-lucide="info" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></i> Data Summary</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; cursor: pointer;" onclick="handleAction('Global Sales', 'Expanding detailed sales ledger...')">
+                <span style="color: var(--text-dim);">Total Punjab Sales:</span>
+                <span style="font-weight: 600;">$1,620,000</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; cursor: pointer;" onclick="handleAction('Global Profit', 'Opening profit allocation map...')">
+                <span style="color: var(--text-dim);">Total Net Profit:</span>
+                <span style="font-weight: 600;">$596,500</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; cursor: pointer;" onclick="handleAction('Active Regions', 'Showing regional footprint...')">
+                <span style="color: var(--text-dim);">Active Districts:</span>
+                <span style="font-weight: 600;">5</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Overlay -->
+<div id="toast" style="position: fixed; bottom: 24px; right: 24px; background: rgba(25, 30, 45, 0.9); backdrop-filter: blur(10px); border: 1px solid var(--primary); padding: 16px 24px; border-radius: 12px; color: white; display: none; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-left: 4px solid var(--primary); transform: translateY(100px); transition: transform 0.3s ease-out;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i data-lucide="loader-2" class="spin" style="width: 18px; color: var(--primary);"></i>
+        <div>
+            <strong id="toast-title" style="display: block; font-size: 0.9rem;">Processing</strong>
+            <span id="toast-msg" style="font-size: 0.8rem; color: var(--text-dim);">Action initiated...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showPunjabMap() {
+        const panel = document.getElementById('punjab-map-panel');
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        handleAction('Punjab Map', 'Punjab district map is ready.');
+        lucide.createIcons();
+    }
+
+    function handleAction(title, message) {
+        const toast = document.getElementById('toast');
+        const tTitle = document.getElementById('toast-title');
+        const tMsg = document.getElementById('toast-msg');
+        
+        tTitle.innerText = title;
+        tMsg.innerText = message;
+        
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100px)';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 300);
+        }, 3000);
+    }
+</script>
+
+<style>
+    .stat-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.05); }
+    tr:hover td { background: rgba(255,255,255,0.03) !important; }
+    .panel-close { padding: 8px; min-width: 38px; min-height: 38px; justify-content: center; }
+    .map-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .map-district { padding: 16px; min-height: 110px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.03); cursor: pointer; display: flex; flex-direction: column; gap: 8px; justify-content: center; transition: all 0.2s ease; }
+    .map-district:hover { transform: translateY(-3px); border-color: var(--primary); background: rgba(59, 130, 246, 0.08); }
+    .map-district i { color: var(--primary); width: 18px; height: 18px; }
+    .map-district span { color: var(--text-dim); font-size: 0.85rem; }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .progress-fill { transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+</style>
+{% endblock %}

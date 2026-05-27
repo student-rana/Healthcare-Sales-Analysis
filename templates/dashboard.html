@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Add hover effects for dashboard rows */
+    tbody tr:hover {
+        background: rgba(255,255,255,0.05);
+    }
+    .client-item:hover {
+        background: rgba(255,255,255,0.05) !important;
+    }
+    .client-avatar:hover {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="header animate-fade-in">
+    <div class="header-title">
+        <h1>Overview</h1>
+        <p>Punjab hospital facility overview.</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('settings') }}" style="text-decoration: none;">
+            <div class="client-avatar" style="border-radius: 50%; cursor: pointer; transition: transform 0.2s;" title="Go to Settings">
+                JD
+            </div>
+        </a>
+    </div>
+</header>
+
+<div class="stats-grid">
+    {% for stat in stats %}
+    {% set target_url = '#' %}
+    {% if 'Revenue' in stat.title %}
+        {% set target_url = url_for('sales_performance') %}
+    {% elif 'Contracts' in stat.title %}
+        {% set target_url = url_for('sales_performance') %}
+    {% elif 'Hospitals' in stat.title or 'Facilities' in stat.title or 'Rating' in stat.title or 'Emergency' in stat.title %}
+        {% set target_url = url_for('hospital_analysis') %}
+    {% elif 'Churn' in stat.title %}
+        {% set target_url = url_for('hospital_analysis') %}
+    {% endif %}
+    
+    <a href="{{ target_url }}" style="text-decoration: none; color: inherit; display: block;" title="Click to view detailed {{ stat.title }} analysis">
+        <div class="glass-panel stat-card animate-fade-in delay-{{ (loop.index0 % 4) * 100 }}" style="cursor: pointer; transition: transform 0.2s, background 0.2s, box-shadow 0.2s;">
+            <div class="stat-header">
+                <span>{{ stat.title }}</span>
+                {% if 'Revenue' in stat.title %}
+                    <i data-lucide="dollar-sign" style="width: 16px; height: 16px;"></i>
+                {% elif 'Contracts' in stat.title %}
+                    <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+                {% elif 'Hospitals' in stat.title %}
+                    <i data-lucide="building" style="width: 16px; height: 16px;"></i>
+                {% else %}
+                    <i data-lucide="trending-down" style="width: 16px; height: 16px;"></i>
+                {% endif %}
+            </div>
+            <div class="stat-value">{{ stat.value }}</div>
+            <div class="stat-trend {{ 'trend-up' if stat.isPositive else 'trend-down' }}">
+                <i data-lucide="{{ 'trending-up' if stat.isPositive else 'trending-down' }}" style="width: 16px; height: 16px;"></i>
+                {{ stat.trend }}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<div class="dashboard-grid">
+    <div class="glass-panel section-card animate-fade-in delay-200">
+        <h2><i data-lucide="activity" style="width: 20px; height: 20px; vertical-align: text-bottom;"></i> Punjab Hospital Rating Trend</h2>
+        <div style="width: 100%; height: 300px;">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <div class="glass-panel section-card animate-fade-in delay-300">
+        <h2><i data-lucide="building" style="width: 20px; height: 20px; vertical-align: text-bottom;"></i> Top Clients</h2>
+        <div class="client-list">
+            {% for client in clients %}
+            <a href="{{ url_for('hospital_analysis') }}" style="text-decoration: none; color: inherit;">
+                <div class="client-item" style="cursor: pointer; transition: background 0.2s; border-radius: 8px; padding: 8px;" title="View in Hospitals">
+                    <div class="client-avatar">
+                        {{ client.name[0] }}
+                    </div>
+                    <div class="client-info">
+                        <h3>{{ client.name }}</h3>
+                        <p>{{ client.contact }} • {{ client.location }}</p>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="glass-panel section-card animate-fade-in delay-200" style="grid-column: 1 / -1;">
+        <h2><i data-lucide="building" style="width: 20px; height: 20px; vertical-align: text-bottom;"></i> Punjab Hospital Records</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Facility ID</th>
+                        <th>Hospital</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Rating</th>
+                        <th>Rating Tier</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr style="cursor: pointer; transition: background 0.2s;" onclick="window.location='{{ url_for('hospital_analysis') }}';" title="View in Hospital Analysis">
+                        <td><strong>{{ order.id }}</strong></td>
+                        <td>{{ order.hospital }}</td>
+                        <td>{{ order.product }}</td>
+                        <td>{{ order.date }}</td>
+                        <td>{{ order.amount }}</td>
+                        <td>
+                            <span class="status-badge status-{{ order.status|lower }}">
+                                {{ order.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Chart.js
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    
+    // Create gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');   
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+            datasets: [{
+                label: 'Hospital Rating',
+                data: [4, 4, 4, 4, 3, 3, 3],
+                borderColor: '#3b82f6',
+                borderWidth: 3,
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#0f172a',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    titleColor: '#f8fafc',
+                    bodyColor: '#f8fafc',
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + '/5 rating';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8' },
+                    border: { display: false }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255,255,255,0.1)',
+                        drawBorder: false,
+                        tickLength: 0
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: function(value) { return value + '/5'; }
+                    },
+                    border: { display: false }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

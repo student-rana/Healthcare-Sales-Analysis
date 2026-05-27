@@ -1,0 +1,728 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="header animate-fade-in">
+    <div class="header-title">
+        <h1>Patient & Operational Analysis</h1>
+        <p>Comprehensive review of hospital throughput, department efficiency, and treatment economics.</p>
+    </div>
+    <div class="header-actions">
+        <button class="glass-button" onclick="showLiveMonitoring()">
+            <i data-lucide="activity"></i> Live Monitoring
+        </button>
+    </div>
+</header>
+
+<div id="live-monitoring-panel" class="glass-panel section-card animate-fade-in" style="display: none; margin-top: 24px; border-color: rgba(16, 185, 129, 0.35);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px;">
+        <div>
+            <h3 style="margin-bottom: 8px;"><i data-lucide="activity" style="width: 18px; vertical-align: middle; margin-right: 8px; color: var(--success);"></i>Live Operational Monitoring</h3>
+            <p style="color: var(--text-dim); margin: 0;">Current patient flow and department status snapshot.</p>
+        </div>
+        <button class="glass-button panel-close" onclick="document.getElementById('live-monitoring-panel').style.display='none'" aria-label="Close live monitoring">
+            <i data-lucide="x"></i>
+        </button>
+    </div>
+    <div class="live-monitoring-grid">
+        <div class="live-monitor-card">
+            <span>Active Patients</span>
+            <strong>1,180</strong>
+            <p>Current month intake trend</p>
+        </div>
+        <div class="live-monitor-card">
+            <span>Avg Treatment Cost</span>
+            <strong>$5,450</strong>
+            <p>Down 3.2% after optimization</p>
+        </div>
+        <div class="live-monitor-card">
+            <span>Operational Score</span>
+            <strong>91/100</strong>
+            <p>Throughput within target range</p>
+        </div>
+        <div class="live-monitor-card">
+            <span>Status</span>
+            <strong style="color: var(--success);">Online</strong>
+            <p>Monitoring feed connected</p>
+        </div>
+    </div>
+</div>
+
+<!-- Top 3 Patient KPIs -->
+<div class="top-kpi-overview glass-panel animate-fade-in">
+    <div class="top-kpi-overview-header">
+        <span class="section-chip">Top 3 KPIs</span>
+        <h2>Patient Analysis Snapshot</h2>
+        <p>Click any metric to explore the detailed departmental breakdown and trend analysis.</p>
+    </div>
+    <div class="stats-grid top-kpis-grid">
+        {% for kpi in data.kpis %}
+        <div class="glass-panel stat-card kpi-expandable animate-scale-in" 
+             style="animation-delay: {{ loop.index0 * 100 }}ms;"
+             onclick="toggleKpiPanel(this, {{ loop.index0 }})" 
+             id="kpi-card-{{ loop.index0 }}">
+            <div class="stat-info">
+                <span class="stat-label">{{ kpi.title }}</span>
+                <h3 class="stat-value" style="font-size: 1.5rem; margin: 8px 0;">{{ kpi.value }}</h3>
+                <p style="font-size: 0.85rem; color: var(--text-dim);">{{ kpi.detail }}</p>
+            </div>
+            <div class="kpi-card-right">
+                <div class="stat-icon-wrapper">
+                    <i data-lucide="{{ 'users' if 'Patients' in kpi.title else 'trending-down' if 'Cost' in kpi.title else 'check-circle' }}"></i>
+                </div>
+                <div class="kpi-expand-indicator">
+                    <i data-lucide="chevron-down" class="kpi-chevron"></i>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Expandable Detail Panels -->
+    {% for kpi in data.kpis %}
+    <div class="kpi-detail-panel" id="kpi-panel-{{ loop.index0 }}" style="display: none;">
+        <div class="kpi-panel-inner">
+            <!-- Panel Header -->
+            <div class="kpi-panel-header">
+                <div class="kpi-panel-title-group">
+                    <div class="kpi-panel-icon">
+                        <i data-lucide="{{ 'users' if 'Patients' in kpi.title else 'trending-down' if 'Cost' in kpi.title else 'check-circle' }}"></i>
+                    </div>
+                    <div>
+                        <h3>{{ kpi.title }} — Detailed Breakdown</h3>
+                        <p style="color: var(--text-dim); font-size: 0.85rem;">Department-level analysis & 6-month trend</p>
+                    </div>
+                </div>
+                <button class="kpi-close-btn" onclick="event.stopPropagation(); closeKpiPanel({{ loop.index0 }})">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="kpi-panel-body">
+                <!-- Left: Department Breakdown -->
+                <div class="kpi-breakdown-section">
+                    <h4 style="margin-bottom: 16px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">By Department</h4>
+                    {% for item in kpi.breakdown %}
+                    <div class="kpi-breakdown-row">
+                        <div class="kpi-breakdown-label">
+                            <span class="kpi-dept-dot" style="background: hsl({{ 200 + loop.index0 * 30 }}, 70%, 55%);"></span>
+                            <span>{{ item.label }}</span>
+                        </div>
+                        <span class="kpi-breakdown-value">{{ item.value }}</span>
+                        <div class="kpi-breakdown-bar-track">
+                            <div class="kpi-breakdown-bar-fill" 
+                                 style="width: 0%; background: linear-gradient(90deg, hsl({{ 200 + loop.index0 * 30 }}, 70%, 45%), hsl({{ 200 + loop.index0 * 30 }}, 70%, 60%));"
+                                 data-width="{{ item.pct }}"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Right: Sparkline Trend + Insight -->
+                <div class="kpi-trend-section">
+                    <h4 style="margin-bottom: 16px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">6-Month Trend</h4>
+                    <div class="kpi-sparkline-container">
+                        <canvas id="sparkline-{{ loop.index0 }}" width="320" height="120"></canvas>
+                    </div>
+                    <div class="kpi-trend-labels">
+                        {% for lbl in kpi.trend_labels %}
+                        <span>{{ lbl }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Insight Card -->
+                    <div class="kpi-insight-card">
+                        <div class="kpi-insight-icon">
+                            <i data-lucide="lightbulb"></i>
+                        </div>
+                        <p>{{ kpi.insight }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="analysis-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+    <!-- Patient Flow Trend -->
+    <div class="glass-panel section-card animate-fade-in delay-200">
+        <h3>Patient Admission Trend</h3>
+        <div class="trend-container" 
+             style="height: 250px; display: flex; align-items: flex-end; justify-content: space-around; margin-top: 30px; position: relative; padding-bottom: 30px; cursor: pointer;"
+             onclick="handleAction('Admission Trend', 'Analyzing volume spikes for selected period...')">
+            {% for item in data.monthly_patients %}
+            <div style="display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; gap: 10px;">
+                <div class="progress-bar-container" style="width: 30px; height: 100%; background: rgba(255,255,255,0.05); border-radius: 15px; position: relative; overflow: hidden; display: flex; align-items: flex-end;">
+                    <div class="progress-fill" style="width: 100%; height: {{ (item.count / 1200) * 100 }}%; background: linear-gradient(to top, var(--primary), #60a5fa); border-radius: 15px; transition: height 1s ease;">
+                        <span class="tooltip" style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; background: var(--bg-dark); padding: 2px 6px; border-radius: 4px; opacity: 0; transition: opacity 0.2s;">{{ item.count }}</span>
+                    </div>
+                </div>
+                <span style="font-size: 0.75rem; color: var(--text-dim);">{{ item.month }}</span>
+            </div>
+            {% endfor %}
+            <style>
+                .progress-fill:hover .tooltip { opacity: 1; }
+            </style>
+        </div>
+    </div>
+
+    <!-- Treatment Cost Distribution -->
+    <div class="glass-panel section-card animate-fade-in delay-300">
+        <h3>Departmental Cost Analysis</h3>
+        <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 16px;">
+            {% for dept in data.departments[:4] %}
+            <div class="cost-item" style="cursor: pointer;" onclick="handleAction('Department: {{ dept.name }}', 'Viewing treatment economics for {{ dept.name }}...')">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 0.9rem;">{{ dept.name }}</span>
+                    <span style="font-size: 0.85rem; font-weight: 600;">{{ dept.avg_cost }} <small style="font-weight: 400; color: var(--text-dim);">avg</small></span>
+                </div>
+                <div class="progress-bar-container" style="height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden;">
+                    <div class="progress-fill" style="width: {{ (dept.performance) }}%; height: 100%; background: {{ 'var(--success)' if dept.performance > 90 else 'var(--primary)' }};"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div style="margin-top: 20px; padding: 12px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 12px; font-size: 0.85rem; color: #fca5a5; cursor: pointer;" onclick="handleAction('Cost Insight', 'Analyzing oncology equipment amortization...')">
+            <strong>Insight:</strong> Oncology costs have risen 4% due to new diagnostic equipment deployment.
+        </div>
+    </div>
+</div>
+
+<!-- Department Performance Table -->
+<div class="glass-panel section-card animate-fade-in delay-400" style="margin-top: 24px;">
+    <h3>Department Efficiency & Performance</h3>
+    <div class="table-container" style="margin-top: 15px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Department Name</th>
+                    <th>Patient Count</th>
+                    <th>Efficiency Score</th>
+                    <th>Performance</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept in data.departments %}
+                <tr class="animate-fade-in" 
+                    style="animation-delay: {{ 500 + loop.index0 * 100 }}ms; cursor: pointer;"
+                    onclick="handleAction('{{ dept.name }} Profile', 'Opening efficiency audits for {{ dept.name }}...')">
+                    <td style="font-weight: 600;">{{ dept.name }}</td>
+                    <td>{{ "{:,.0f}".format(dept.patients) }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="progress-bar-container" style="flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                                <div class="progress-fill" style="width: {{ dept.performance }}%; height: 100%; background: {{ 'var(--success)' if dept.performance > 90 else 'var(--primary)' }};"></div>
+                            </div>
+                            <span style="font-size: 0.8rem;">{{ dept.performance }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 4px;">
+                            {% for i in range(5) %}
+                            <i data-lucide="star" style="width: 12px; height: 12px; color: {{ 'var(--primary)' if i < (dept.performance/20)|int else 'rgba(255,255,255,0.1)' }}; fill: {{ 'var(--primary)' if i < (dept.performance/20)|int else 'none' }};"></i>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge {{ 'status-delivered' if dept.performance > 90 else 'status-processing' }}" style="padding: 4px 10px; font-size: 0.75rem;">
+                            {{ 'Optimal' if dept.performance > 90 else 'Stable' }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Notification Overlay -->
+<div id="toast" style="position: fixed; bottom: 24px; right: 24px; background: rgba(25, 30, 45, 0.9); backdrop-filter: blur(10px); border: 1px solid var(--primary); padding: 16px 24px; border-radius: 12px; color: white; display: none; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-left: 4px solid var(--primary); transform: translateY(100px); transition: transform 0.3s ease-out;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i data-lucide="loader-2" class="spin" style="width: 18px; color: var(--primary);"></i>
+        <div>
+            <strong id="toast-title" style="display: block; font-size: 0.9rem;">Processing</strong>
+            <span id="toast-msg" style="font-size: 0.8rem; color: var(--text-dim);">Action initiated...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // KPI trend data embedded from server
+    const kpiTrendData = [
+        {% for kpi in data.kpis %}
+        {{ kpi.trend_data }},
+        {% endfor %}
+    ];
+
+    let activeKpiPanel = null;
+
+    function toggleKpiPanel(card, index) {
+        const panel = document.getElementById('kpi-panel-' + index);
+        
+        // If this panel is already open, close it
+        if (activeKpiPanel === index) {
+            closeKpiPanel(index);
+            return;
+        }
+
+        // Close any other open panel first
+        if (activeKpiPanel !== null) {
+            closeKpiPanel(activeKpiPanel, false);
+        }
+
+        // Highlight the active card
+        document.querySelectorAll('.kpi-expandable').forEach(c => c.classList.remove('kpi-active'));
+        card.classList.add('kpi-active');
+
+        // Open the panel with animation
+        panel.style.display = 'block';
+        requestAnimationFrame(() => {
+            panel.classList.add('kpi-panel-open');
+            
+            // Animate the breakdown bars
+            setTimeout(() => {
+                panel.querySelectorAll('.kpi-breakdown-bar-fill').forEach(bar => {
+                    bar.style.width = bar.dataset.width + '%';
+                });
+            }, 150);
+
+            // Draw the sparkline
+            setTimeout(() => {
+                drawSparkline(index, kpiTrendData[index]);
+            }, 200);
+        });
+
+        activeKpiPanel = index;
+        
+        // Re-init lucide icons for the new panel
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    function closeKpiPanel(index, resetActive = true) {
+        const panel = document.getElementById('kpi-panel-' + index);
+        const card = document.getElementById('kpi-card-' + index);
+        
+        panel.classList.remove('kpi-panel-open');
+        card.classList.remove('kpi-active');
+        
+        // Reset bars
+        panel.querySelectorAll('.kpi-breakdown-bar-fill').forEach(bar => {
+            bar.style.width = '0%';
+        });
+
+        setTimeout(() => {
+            panel.style.display = 'none';
+        }, 350);
+
+        if (resetActive) {
+            activeKpiPanel = null;
+        }
+    }
+
+    function drawSparkline(index, data) {
+        const canvas = document.getElementById('sparkline-' + index);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        
+        ctx.clearRect(0, 0, w, h);
+
+        const min = Math.min(...data) * 0.9;
+        const max = Math.max(...data) * 1.05;
+        const range = max - min || 1;
+        const stepX = w / (data.length - 1);
+        const padding = 10;
+
+        // Draw gradient fill
+        const gradient = ctx.createLinearGradient(0, 0, 0, h);
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        for (let i = 0; i < data.length; i++) {
+            const x = i * stepX;
+            const y = h - padding - ((data[i] - min) / range) * (h - padding * 2);
+            if (i === 0) ctx.lineTo(x, y);
+            else {
+                const prevX = (i - 1) * stepX;
+                const prevY = h - padding - ((data[i - 1] - min) / range) * (h - padding * 2);
+                const cpX = (prevX + x) / 2;
+                ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
+            }
+        }
+        ctx.lineTo(w, h);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Draw line
+        ctx.beginPath();
+        for (let i = 0; i < data.length; i++) {
+            const x = i * stepX;
+            const y = h - padding - ((data[i] - min) / range) * (h - padding * 2);
+            if (i === 0) ctx.moveTo(x, y);
+            else {
+                const prevX = (i - 1) * stepX;
+                const prevY = h - padding - ((data[i - 1] - min) / range) * (h - padding * 2);
+                const cpX = (prevX + x) / 2;
+                ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
+            }
+        }
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Draw dots
+        for (let i = 0; i < data.length; i++) {
+            const x = i * stepX;
+            const y = h - padding - ((data[i] - min) / range) * (h - padding * 2);
+            
+            // Glow
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
+            ctx.fill();
+            
+            // Dot
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fill();
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Value label
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.font = '10px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            const label = data[i] >= 1000 ? (data[i] / 1000).toFixed(1) + 'k' : data[i].toString();
+            ctx.fillText(label, x, y - 12);
+        }
+    }
+
+    function showLiveMonitoring() {
+        const panel = document.getElementById('live-monitoring-panel');
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        handleAction('Live Monitoring', 'Live operational monitoring is active.');
+        lucide.createIcons();
+    }
+
+    function handleAction(title, message) {
+        const toast = document.getElementById('toast');
+        const tTitle = document.getElementById('toast-title');
+        const tMsg = document.getElementById('toast-msg');
+        
+        tTitle.innerText = title;
+        tMsg.innerText = message;
+        
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100px)';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 300);
+        }, 3000);
+    }
+</script>
+
+<style>
+    /* Existing styles */
+    .stat-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.05); }
+    tr:hover td { background: rgba(255,255,255,0.03) !important; }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .progress-fill { transition: all 1s cubic-bezier(0.4, 0, 0.2, 1); }
+    .panel-close { padding: 8px; min-width: 38px; min-height: 38px; justify-content: center; }
+    .live-monitoring-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .live-monitor-card { padding: 16px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.14); background: rgba(16, 185, 129, 0.06); }
+    .live-monitor-card span { display: block; color: var(--text-dim); font-size: 0.85rem; margin-bottom: 8px; }
+    .live-monitor-card strong { display: block; color: var(--text-main); font-size: 1.4rem; margin-bottom: 8px; }
+    .live-monitor-card p { margin: 0; color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; }
+
+    /* ── Expandable KPI Card Styles ── */
+    .kpi-expandable {
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        position: relative;
+    }
+
+    .kpi-expandable:hover {
+        transform: translateY(-5px);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .kpi-expandable.kpi-active {
+        transform: translateY(-3px);
+        border-color: var(--primary);
+        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.3);
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    .kpi-card-right {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .kpi-expand-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .kpi-expand-indicator svg {
+        width: 14px;
+        height: 14px;
+        color: var(--text-muted);
+        transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+    .kpi-active .kpi-expand-indicator {
+        background: rgba(59, 130, 246, 0.15);
+    }
+
+    .kpi-active .kpi-expand-indicator svg {
+        transform: rotate(180deg);
+        color: var(--primary);
+    }
+
+    /* ── Detail Panel ── */
+    .kpi-detail-panel {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.3s ease,
+                    margin 0.3s ease;
+        margin-top: 0;
+    }
+
+    .kpi-detail-panel.kpi-panel-open {
+        max-height: 500px;
+        opacity: 1;
+        margin-top: 8px;
+    }
+
+    .kpi-panel-inner {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(59, 130, 246, 0.15);
+        border-radius: 16px;
+        padding: 24px;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .kpi-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .kpi-panel-title-group {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .kpi-panel-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05));
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+    }
+
+    .kpi-panel-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .kpi-panel-header h3 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+    }
+
+    .kpi-close-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 6px;
+        cursor: pointer;
+        color: var(--text-muted);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .kpi-close-btn:hover {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #f87171;
+    }
+
+    .kpi-close-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Panel Body Layout */
+    .kpi-panel-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+    }
+
+    /* ── Breakdown Section ── */
+    .kpi-breakdown-section {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .kpi-breakdown-row {
+        display: grid;
+        grid-template-columns: 130px 80px 1fr;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .kpi-breakdown-row:last-child {
+        border-bottom: none;
+    }
+
+    .kpi-breakdown-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.88rem;
+    }
+
+    .kpi-dept-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .kpi-breakdown-value {
+        font-weight: 600;
+        font-size: 0.88rem;
+        text-align: right;
+        color: var(--text-main);
+    }
+
+    .kpi-breakdown-bar-track {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .kpi-breakdown-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── Trend Section ── */
+    .kpi-trend-section {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .kpi-sparkline-container {
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .kpi-sparkline-container canvas {
+        width: 100%;
+        height: 120px;
+    }
+
+    .kpi-trend-labels {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 16px 0;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    /* ── Insight Card ── */
+    .kpi-insight-card {
+        margin-top: 16px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(16, 185, 129, 0.04));
+        border: 1px solid rgba(59, 130, 246, 0.12);
+        border-radius: 12px;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.75);
+        line-height: 1.5;
+    }
+
+    .kpi-insight-icon {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: rgba(245, 158, 11, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fbbf24;
+    }
+
+    .kpi-insight-icon svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .kpi-insight-card p {
+        margin: 0;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+        .kpi-panel-body {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .kpi-breakdown-row {
+            grid-template-columns: 100px 70px 1fr;
+        }
+    }
+</style>
+{% endblock %}

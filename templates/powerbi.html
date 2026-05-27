@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="header animate-fade-in">
+    <div class="header-title">
+        <h1>Power BI Central</h1>
+        <p>Advanced data visualization and cross-dashboard analytics hub.</p>
+    </div>
+    <div class="header-actions">
+        <button class="glass-button" onclick="handleAction('Sync Data', 'Synchronizing all regional and operational data streams...')">
+            <i data-lucide="refresh-cw"></i> Sync Dashboards
+        </button>
+        <a href="{{ url_for('settings', tab='Integrations') }}" style="text-decoration: none;">
+            <button class="glass-button" style="background: var(--primary); border: none; margin-left: 12px;">
+                <i data-lucide="link-2"></i> Connect Dashboard
+            </button>
+        </a>
+    </div>
+</header>
+
+<div id="pbi-content-wrapper" class="animate-fade-in delay-200" style="margin-top: 24px;">
+    <!-- Content will be injected by script -->
+</div>
+
+<!-- Troubleshooting Guide (Hidden by default) -->
+<div id="pbi-troubleshoot" class="glass-panel section-card animate-fade-in" style="margin-top: 24px; display: none; border-left: 4px solid var(--danger);">
+    <h3 style="color: var(--danger); display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <i data-lucide="alert-circle"></i> Cloud Loading Issue Detected?
+    </h3>
+    <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 16px;">
+        Agar aapko screen par ek cloud icon dikh raha hai, toh yeh Power BI ka loading error hai. Isse solve karne ke liye niche diye gaye steps follow karein:
+    </p>
+    <ul style="color: var(--text-muted); font-size: 0.85rem; padding-left: 20px; line-height: 1.8;">
+        <li><strong>Public URL use karein:</strong> Power BI mein "File > Embed report > Publish to web (public)" ka use karein.</li>
+        <li><strong>Browser Settings:</strong> Apne browser settings mein "Block third-party cookies" ko disable karein.</li>
+        <li><strong>Incognito Mode:</strong> Agar aap Incognito/Private window use kar rahe hain, toh usme Power BI embed block ho sakta hai.</li>
+    </ul>
+</div>
+
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const customUrl = localStorage.getItem('custom_pbi_url');
+        const wrapper = document.getElementById('pbi-content-wrapper');
+        const troubleshoot = document.getElementById('pbi-troubleshoot');
+        
+        if (customUrl) {
+            troubleshoot.style.display = 'block';
+            wrapper.innerHTML = `
+                <div class="glass-panel section-card" style="padding: 0; overflow: hidden; height: 800px; background: #000; position: relative;">
+                    <iframe title="Power BI Report" width="100%" height="100%" src="${customUrl}" frameborder="0" allowFullScreen="true" style="border: none;"></iframe>
+                </div>
+            `;
+        } else {
+            // High-fidelity fallback dashboard using site data
+            wrapper.innerHTML = `
+                <div class="powerbi-container">
+                    <div class="glass-panel section-card" style="padding: 24px; background: #0f1117; border: 1px solid rgba(255,255,255,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid #32353d; padding-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Power_bi_logo_black.svg" style="width: 20px; filter: invert(1);">
+                                <span style="font-size: 0.8rem; font-weight: 600; color: #ced4da;">Healthcare Sales Live Analysis</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: #6c757d;">Last Updated: Just Now</div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                            <div class="pbi-tile">
+                                <span>TOTAL REVENUE</span>
+                                <h2 style="color: #ffeb3b;">$1.46M</h2>
+                            </div>
+                            <div class="pbi-tile">
+                                <span>NET PROFIT</span>
+                                <h2 style="color: #4caf50;">$533K</h2>
+                            </div>
+                            <div class="pbi-tile">
+                                <span>GROWTH</span>
+                                <h2 style="color: #e91e63;">+12.8%</h2>
+                            </div>
+                            <div class="pbi-tile">
+                                <span>ACCOUNTS</span>
+                                <h2 style="color: #03a9f4;">124</h2>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+                            <div style="background: #1a1c23; border: 1px solid #32353d; border-radius: 4px; padding: 20px; height: 350px;">
+                                <h4 style="font-size: 0.85rem; margin-bottom: 20px;">Monthly Revenue Breakdown</h4>
+                                <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 200px; padding-top: 20px; border-left: 1px solid #32353d; border-bottom: 1px solid #32353d;">
+                                    <div class="pbi-bar" style="height: 40%;" title="Jan"></div>
+                                    <div class="pbi-bar" style="height: 55%;" title="Feb"></div>
+                                    <div class="pbi-bar" style="height: 45%;" title="Mar"></div>
+                                    <div class="pbi-bar" style="height: 75%;" title="Apr"></div>
+                                    <div class="pbi-bar" style="height: 85%;" title="May"></div>
+                                    <div class="pbi-bar" style="height: 95%;" title="Jun"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-left: 5px; color: #6c757d; font-size: 0.7rem;">
+                                    <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                                </div>
+                            </div>
+                            <div style="background: #1a1c23; border: 1px solid #32353d; border-radius: 4px; padding: 20px;">
+                                <h4 style="font-size: 0.85rem; margin-bottom: 20px;">Regional Performance</h4>
+                                <div style="display: flex; flex-direction: column; gap: 16px;">
+                                    <div class="pbi-region"><span>North America</span><div class="pbi-progress"><div style="width: 85%;"></div></div></div>
+                                    <div class="pbi-region"><span>Europe</span><div class="pbi-progress"><div style="width: 72%;"></div></div></div>
+                                    <div class="pbi-region"><span>Asia Pacific</span><div class="pbi-progress"><div style="width: 64%;"></div></div></div>
+                                    <div class="pbi-region"><span>Latin America</span><div class="pbi-progress"><div style="width: 45%;"></div></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; text-align: center;">
+                        <p style="color: var(--text-dim); font-size: 0.85rem;">Yeh live mockup aapke data par based hai. Apna real Power BI connect karne ke liye niche click karein:</p>
+                        <a href="{{ url_for('settings', tab='Integrations') }}" style="text-decoration: none;">
+                            <button class="glass-button" style="margin-top: 12px; background: var(--primary); border: none;">
+                                <i data-lucide="settings"></i> Configure Real Power BI
+                            </button>
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+        lucide.createIcons();
+    });
+</script>
+
+<style>
+    .pbi-tile { background: #1a1c23; padding: 20px; border-radius: 4px; border: 1px solid #32353d; text-align: center; }
+    .pbi-tile span { display: block; font-size: 0.65rem; color: #6c757d; margin-bottom: 8px; letter-spacing: 0.5px; }
+    .pbi-tile h2 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+    .pbi-bar { width: 12%; background: var(--primary); border-radius: 2px 2px 0 0; transition: all 0.3s; cursor: pointer; }
+    .pbi-bar:hover { filter: brightness(1.2); }
+    .pbi-region span { font-size: 0.75rem; color: #ced4da; display: block; margin-bottom: 6px; }
+    .pbi-progress { height: 8px; background: #25272e; border-radius: 4px; overflow: hidden; }
+    .pbi-progress div { height: 100%; background: var(--primary); border-radius: 4px; }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+{% endblock %}

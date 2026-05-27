@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="header animate-fade-in">
+    <div class="header-title">
+        <h1>Reports & Insights</h1>
+        <p>Strategic data summaries and downloadable performance reports.</p>
+    </div>
+</header>
+
+<div class="reports-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+    <!-- Key Insights Section -->
+    <div class="glass-panel section-card animate-fade-in delay-200">
+        <h3><i data-lucide="lightbulb" style="width: 20px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></i> Key Strategic Insights</h3>
+        <div class="insights-list" style="margin-top: 20px; display: flex; flex-direction: column; gap: 16px;">
+            {% for insight in data.key_insights %}
+            <button class="insight-item" onclick="openInsight('{{ loop.index0 }}')">
+                <h4 style="font-size: 0.95rem; margin-bottom: 6px; color: var(--primary);">{{ insight.title }}</h4>
+                <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.5;">{{ insight.desc }}</p>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Export Reports Section -->
+    <div class="glass-panel section-card animate-fade-in delay-300">
+        <h3><i data-lucide="download" style="width: 20px; vertical-align: middle; margin-right: 8px; color: var(--success);"></i> Export Reports</h3>
+        <div class="available-reports" style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+            {% for report in data.available_reports %}
+            <div class="report-row" style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border); transition: background 0.2s;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="{{ 'file-text' if report.type == 'PDF' else 'table' if report.type == 'Excel' else 'file-spreadsheet' }}" style="width: 20px; color: {{ 'var(--danger)' if report.type == 'PDF' else 'var(--success)' if report.type == 'Excel' else 'var(--primary)' }}"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 0.9rem; margin-bottom: 2px;">{{ report.name }}</h4>
+                        <p style="font-size: 0.75rem; color: var(--text-dim);">Generated on {{ report.date }} • {{ report.type }}</p>
+                    </div>
+                </div>
+                <button class="export-btn" 
+                        onclick="downloadReport('{{ report.name }}', '{{ report.type }}', '{{ report.date }}')"
+                        style="padding: 8px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; border-radius: 8px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;">
+                    Download
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div id="insight-panel" class="glass-panel section-card animate-fade-in" style="display: none; margin-top: 24px; border-color: rgba(59, 130, 246, 0.35);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+        <div>
+            <h3 id="insight-title" style="margin-bottom: 8px;">Insight Details</h3>
+            <p id="insight-desc" style="color: var(--text-dim); margin: 0 0 12px 0;"></p>
+            <p id="insight-action" style="color: var(--text-muted); margin: 0;"></p>
+        </div>
+        <button class="glass-button panel-close" onclick="document.getElementById('insight-panel').style.display='none'" aria-label="Close insight details">
+            <i data-lucide="x"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Notification Overlay -->
+<div id="toast" style="position: fixed; bottom: 24px; right: 24px; background: rgba(25, 30, 45, 0.9); backdrop-filter: blur(10px); border: 1px solid var(--primary); padding: 16px 24px; border-radius: 12px; color: white; display: none; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-left: 4px solid var(--primary); transform: translateY(100px); transition: transform 0.3s ease-out;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i data-lucide="loader-2" class="spin" style="width: 18px; color: var(--primary);"></i>
+        <div>
+            <strong id="toast-title" style="display: block; font-size: 0.9rem;">Processing</strong>
+            <span id="toast-msg" style="font-size: 0.8rem; color: var(--text-dim);">Action initiated...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const insights = {{ data.key_insights | tojson }};
+
+    function openInsight(index) {
+        const insight = insights[index];
+        const panel = document.getElementById('insight-panel');
+        document.getElementById('insight-title').innerText = insight.title;
+        document.getElementById('insight-desc').innerText = insight.desc;
+        document.getElementById('insight-action').innerText = `Recommended action: ${insight.action}`;
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        lucide.createIcons();
+    }
+
+    function downloadReport(name, type, date) {
+        const extension = type === 'Excel' ? 'xls' : type.toLowerCase();
+        const filename = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${extension}`;
+        const content = [
+            name,
+            `Generated on: ${date}`,
+            `Format: ${type}`,
+            '',
+            'This downloaded file is a demo export from HealthSales Reports & Insights.'
+        ].join('\n');
+        const blob = new Blob([content], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+        handleAction('Download Started', `${name} is downloading.`);
+    }
+
+    function handleAction(title, message) {
+        const toast = document.getElementById('toast');
+        const tTitle = document.getElementById('toast-title');
+        const tMsg = document.getElementById('toast-msg');
+        
+        tTitle.innerText = title;
+        tMsg.innerText = message;
+        
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100px)';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 300);
+        }, 3000);
+    }
+</script>
+
+<style>
+    .insight-item { width: 100%; text-align: left; padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+    .insight-item:hover { transform: translateX(8px); background: rgba(255,255,255,0.05); border-color: var(--primary); }
+    .insight-item:focus-visible, .export-btn:focus-visible, .panel-close:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .report-row:hover { background: rgba(255,255,255,0.04); }
+    .export-btn:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 5px 15px var(--primary-glow); }
+    .panel-close { padding: 8px; min-width: 38px; min-height: 38px; justify-content: center; }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+{% endblock %}

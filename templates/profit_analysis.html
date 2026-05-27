@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Profit Analysis Page -->
+<header class="header animate-fade-in">
+    <div class="header-title">
+        <h1>Profit Analysis</h1>
+        <p>Detailed analysis of profitability trends and identifying areas for cost optimization.</p>
+    </div>
+</header>
+
+<!-- Profit KPIs -->
+<div class="stats-grid">
+    {% for kpi in data.kpis %}
+    <div class="glass-panel stat-card animate-scale-in" 
+         style="animation-delay: {{ loop.index0 * 100 }}ms; cursor: pointer; transition: transform 0.2s, background 0.2s;"
+         onclick="showKpiDetails('{{ kpi.title }}')">
+        <div class="stat-info">
+            <span class="stat-label">{{ kpi.title }}</span>
+            <h3 class="stat-value" style="font-size: 1.5rem; margin: 8px 0;">{{ kpi.value }}</h3>
+            <p style="font-size: 0.85rem; color: var(--text-dim);">{{ kpi.detail }}</p>
+        </div>
+        <div class="stat-icon-wrapper">
+            <i data-lucide="{{ 'dollar-sign' if 'Profit' in kpi.title else 'cpu' }}"></i>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Clickable KPI Details -->
+<div id="kpi-details-panel" class="glass-panel section-card animate-fade-in" style="display: none; margin-top: 24px; border-color: rgba(59, 130, 246, 0.35);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+        <div>
+            <h3 id="kpi-detail-title" style="margin-bottom: 8px;">Profit Details</h3>
+            <p id="kpi-detail-summary" style="color: var(--text-dim); margin: 0; max-width: 850px;"></p>
+        </div>
+        <button class="glass-button panel-close" onclick="hidePanel('kpi-details-panel')" aria-label="Close KPI details">
+            <i data-lucide="x"></i>
+        </button>
+    </div>
+    <div id="kpi-detail-items" class="detail-pill-grid"></div>
+</div>
+
+<div class="analysis-grid" style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 24px; margin-top: 24px;">
+    <!-- Monthly Profit Trend -->
+    <div class="glass-panel section-card animate-fade-in delay-200">
+        <h3>Monthly Profit Trend</h3>
+        <div class="chart-container" 
+             style="height: 250px; display: flex; align-items: flex-end; justify-content: space-around; margin-top: 30px; cursor: pointer;"
+             onclick="handleAction('Profit Trend', 'Exploring profitability data points...')">
+            {% for item in data.profit_trend %}
+            <div class="trend-col" style="display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 1;">
+                <div class="bar-container" style="width: 32px; height: 180px; background: rgba(255,255,255,0.03); border-radius: 8px; position: relative; overflow: hidden;">
+                    <div class="bar-fill" style="position: absolute; bottom: 0; width: 100%; height: {{ (item.profit / 60000) * 100 }}%; background: linear-gradient(to top, var(--success), var(--success-glow)); border-radius: 8px; transition: height 1s ease-out;"></div>
+                </div>
+                <span style="font-size: 0.75rem; color: var(--text-dim);">{{ item.month }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Profitability Insights -->
+    <div class="glass-panel section-card animate-fade-in delay-300">
+        <h3>Profitability Insights</h3>
+        <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 20px;">
+            <div class="insight-box" style="padding: 16px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 12px; display: flex; gap: 12px;">
+                <i data-lucide="trending-up" style="color: var(--success); flex-shrink: 0;"></i>
+                <div>
+                    <strong style="display: block; font-size: 0.9rem; margin-bottom: 4px;">Positive Momentum</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Profit grown by 15.4% this quarter, primarily driven by high-margin pharmaceuticals.</p>
+                </div>
+            </div>
+            <div class="insight-box" style="padding: 16px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 12px; display: flex; gap: 12px; cursor: pointer;" onclick="handleAction('Focus Area', 'Identifying stagnant margin clusters...')">
+                <i data-lucide="alert-triangle" style="color: var(--danger); flex-shrink: 0;"></i>
+                <div>
+                    <strong style="display: block; font-size: 0.9rem; margin-bottom: 4px;">Attention Required</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Legacy equipment categories are showing stagnant margins. Review 3 loss-making lines.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loss-making Products Table -->
+<div class="glass-panel section-card animate-fade-in delay-400" style="margin-top: 24px;">
+    <h3 style="color: var(--danger);"><i data-lucide="trending-down" style="width: 18px; vertical-align: middle; margin-right: 8px;"></i> Critical: Loss-making Products</h3>
+    <div class="table-container" style="margin-top: 15px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Net Loss</th>
+                    <th>Primary Reason</th>
+                    <th>Action Plan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prod in data.loss_making_products %}
+                <tr class="animate-fade-in" style="animation-delay: {{ 500 + loop.index0 * 100 }}ms;">
+                    <td style="font-weight: 600;">{{ prod.name }}</td>
+                    <td style="color: var(--danger); font-weight: 600;">{{ prod.loss }}</td>
+                    <td style="color: var(--text-dim);">{{ prod.reason }}</td>
+                    <td>
+                        <button class="status-badge status-pending" 
+                                style="padding: 6px 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); border-radius: 6px; cursor: pointer; transition: all 0.2s;"
+                                onclick="handleAction('Review: {{ prod.name }}', 'Scheduling emergency product line audit...')">
+                            Initiate Review
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Notification Overlay -->
+<div id="toast" style="position: fixed; bottom: 24px; right: 24px; background: rgba(25, 30, 45, 0.9); backdrop-filter: blur(10px); border: 1px solid var(--primary); padding: 16px 24px; border-radius: 12px; color: white; display: none; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-left: 4px solid var(--primary); transform: translateY(100px); transition: transform 0.3s ease-out;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i data-lucide="loader-2" class="spin" style="width: 18px; color: var(--primary);"></i>
+        <div>
+            <strong id="toast-title" style="display: block; font-size: 0.9rem;">Processing</strong>
+            <span id="toast-msg" style="font-size: 0.8rem; color: var(--text-dim);">Action initiated...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const kpiDetails = {{ data.kpi_details | tojson }};
+
+    function hidePanel(panelId) {
+        document.getElementById(panelId).style.display = 'none';
+    }
+
+    function showKpiDetails(title) {
+        const details = kpiDetails[title];
+        const panel = document.getElementById('kpi-details-panel');
+        const itemContainer = document.getElementById('kpi-detail-items');
+
+        document.getElementById('kpi-detail-title').innerText = details.title;
+        document.getElementById('kpi-detail-summary').innerText = details.summary;
+        itemContainer.innerHTML = details.items.map(item => `<span class="detail-pill">${item}</span>`).join('');
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        lucide.createIcons();
+    }
+
+    function handleAction(title, message) {
+        const toast = document.getElementById('toast');
+        const tTitle = document.getElementById('toast-title');
+        const tMsg = document.getElementById('toast-msg');
+        
+        tTitle.innerText = title;
+        tMsg.innerText = message;
+        
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100px)';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 300);
+        }, 3000);
+    }
+</script>
+
+<style>
+    .profit-bar:hover .tooltip { opacity: 1; }
+    .profit-bar:hover { filter: brightness(1.2); }
+    tr:hover td { background: rgba(255,255,255,0.03) !important; }
+    .stat-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.05); }
+    .trend-col:hover .bar-fill { filter: brightness(1.2); }
+    .status-pending:hover { background: var(--danger); color: white; transform: scale(1.05); }
+    .panel-close { padding: 8px; min-width: 38px; min-height: 38px; justify-content: center; }
+    .detail-pill-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .detail-pill { padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.25); background: rgba(59, 130, 246, 0.08); color: var(--text-main); font-size: 0.9rem; }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .bar-fill { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+</style>
+{% endblock %}
